@@ -1,2 +1,3 @@
 *.ps1
+*.sh
 go.sum
