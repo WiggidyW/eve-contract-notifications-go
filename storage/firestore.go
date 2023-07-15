@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	CREDS string = `##FIRESTORE_CREDS##`
+	CREDS      string = `##FIRESTORE_CREDS##`
+	PROJECT_ID string = "##FIRESTORE_PROJECT_ID##"
 
 	COLLECTION string = "contract_notifications"
 	DOCUMENT   string = "buyback_last_run"
@@ -27,7 +28,7 @@ type FirestoreStorage struct {
 func NewFirestoreStorage(ctx context.Context) (*FirestoreStorage, error) {
 	client, err := firestore.NewClient(
 		ctx,
-		firestore.DetectProjectID,
+		PROJECT_ID,
 		option.WithCredentialsJSON([]byte(CREDS)),
 	)
 	if err != nil {
