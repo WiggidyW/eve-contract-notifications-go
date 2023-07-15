@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	CREDS string = "##FIRESTORE_CREDS##"
+	CREDS string = `##FIRESTORE_CREDS##`
 
 	COLLECTION string = "contract_notifications"
 	DOCUMENT   string = "buyback_last_run"
