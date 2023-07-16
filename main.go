@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 
 	"github.com/WiggidyW/eve-contract-notifications-go/contracts"
 	"github.com/WiggidyW/eve-contract-notifications-go/discord"
@@ -25,19 +26,23 @@ type NotifyOf struct {
 }
 
 func init() {
-	funcframework.RegisterHTTPFunction("/", main)
-	funcframework.Start("8080")
+	functions.HTTP("Run", run)
+}
+
+func run(_ http.ResponseWriter, _ *http.Request) {
+	main()
 }
 
 func main() {
 	ctx := context.Background()
 
 	wg := sync.WaitGroup{}
-	errChan := make(chan error)
+	errChan := make(chan error, 2)
 	contractChan := make(chan *[]contracts.Contract)
 	// Add a buffer to this channel so we don't hang forever on error.
 	discordChan := make(chan discord.NotificationContracts, 1)
 
+	wg.Add(1)
 	go func(
 		ctx context.Context,
 		wg *sync.WaitGroup,
@@ -58,6 +63,7 @@ func main() {
 		}
 	}(ctx, &wg, errChan, contractChan)
 
+	wg.Add(1)
 	go func(
 		wg *sync.WaitGroup,
 		errChan chan error,
