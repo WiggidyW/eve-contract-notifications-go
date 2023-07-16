@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
@@ -37,10 +38,14 @@ func run(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		// Write the error to the response.
 		fmt.Fprint(w, err)
+		// Exit with a non-zero status code.
+		syscall.Exit(1)
 	} else {
 		log.Printf("run successful")
 		// Write a simple OK response
 		fmt.Fprint(w, "OK")
+		// Exit with a zero status code.
+		syscall.Exit(0)
 	}
 }
 
