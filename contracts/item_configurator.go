@@ -44,13 +44,15 @@ func (c *ItemConfiguratorClient) Get(ctx context.Context) (*[]Contract, error) {
 
 	// Retry a few times if we fail to get the contracts.
 	for i := 0; i < MAX_RETRIES; i++ {
+		// Sleep for a bit before retrying.
+		if i > 0 {
+			time.Sleep(RETRY_DELAY)
+		}
 		rep, err = c.client.BuybackContracts(ctx, Req())
 		// If we succeeded, break out of the loop.
 		if err == nil {
 			break
 		}
-		// Sleep for a bit before retrying.
-		time.Sleep(RETRY_DELAY)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get contracts: %v", err)
