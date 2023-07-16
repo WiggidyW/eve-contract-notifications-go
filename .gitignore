@@ -2,3 +2,5 @@
 *.sh
 *.exe
 go.sum
+main.go.bak
+main.go
