@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"context"
@@ -30,12 +30,21 @@ func init() {
 }
 
 func run(w http.ResponseWriter, _ *http.Request) {
-	main()
-	// Write a simple OK response
-	fmt.Fprint(w, "OK")
+	err := runInner()
+	if err != nil {
+		log.Printf("run failed: %v", err)
+		// Set the response status code to 500 Internal Server Error.
+		w.WriteHeader(http.StatusInternalServerError)
+		// Write the error to the response.
+		fmt.Fprint(w, err)
+	} else {
+		log.Printf("run successful")
+		// Write a simple OK response
+		fmt.Fprint(w, "OK")
+	}
 }
 
-func main() {
+func runInner() error {
 	ctx := context.Background()
 
 	wg := sync.WaitGroup{}
@@ -95,13 +104,13 @@ func main() {
 	// Create the storage client.
 	storage, err := storage.NewStorage(ctx)
 	if err != nil {
-		log.Fatalf("failed to create storage: %v", err)
+		return fmt.Errorf("failed to create storage: %v", err)
 	}
 
 	// Get the previous run hash codes.
 	prevRun, err := storage.Get(ctx)
 	if err != nil {
-		log.Fatalf("failed to get previous run hash codes: %v", err)
+		return fmt.Errorf("failed to get previous run hash codes: %v", err)
 	}
 
 	// Store all hash codes from this run.
@@ -114,7 +123,7 @@ func main() {
 	// Get the contracts from the channel.
 	select {
 	case err := <-errChan:
-		log.Fatal(err)
+		return err
 	case contractsPtr := <-contractChan:
 		contracts := *contractsPtr
 		hashCodes = make([]hashcode.HashCode, 0, len(contracts))
@@ -145,13 +154,15 @@ func main() {
 
 	// Panic now if storing the hash codes failed. Discord has been notified.
 	if err != nil {
-		log.Fatalf("failed to store hash codes: %v", err)
+		return fmt.Errorf("failed to store hash codes: %v", err)
 	}
 
 	// Check for errors.
 	select {
 	case err := <-errChan:
-		log.Fatal(err)
+		return err
 	default:
 	}
+
+	return nil
 }
