@@ -5,11 +5,12 @@
   - '-c'
   - |
     sed -i 's>##ITEM_CONFIGURATOR_SERVER_ADDRESS##>${_ITEM_CONFIGURATOR_SERVER_ADDRESS}>g' contracts/item_configurator.go
-    sed -i 's/##ITEM_CONFIGURATOR_REFRESH_TOKEN##/${_ITEM_CONFIGURATOR_REFRESH_TOKEN}/g' contracts/item_configurator.go
-    sed -i 's/##DISCORD_TOKEN##/${_DISCORD_TOKEN}/g' discord/discord.go
-    sed -i 's/##DISCORD_CHANNEL_ID##/${_DISCORD_CHANNEL_ID}/g' discord/discord.go
-    sed -i 's>##FIRESTORE_CREDS##/${_FIRESTORE_CREDS}>g' storage/firestore.go
-    gcloud functions deploy eve-contract-notifications-go --region=${_GCP_REGION} --runtime=go120 --source=. --trigger-http
+    sed -i 's>##ITEM_CONFIGURATOR_REFRESH_TOKEN##>${_ITEM_CONFIGURATOR_REFRESH_TOKEN}>g' contracts/item_configurator.go
+    sed -i 's>##DISCORD_TOKEN##>${_DISCORD_TOKEN}>g' discord/discord.go
+    sed -i 's>##DISCORD_CHANNEL_ID##>${_DISCORD_CHANNEL_ID}>g' discord/discord.go
+    sed -i 's>##FIRESTORE_CREDS##>${_FIRESTORE_CREDS}>g' storage/firestore.go
+    sed -i 's>##FIRESTORE_PROJECT_ID##>${_FIRESTORE_PROJECT_ID}>g' storage/firestore.go
+    gcloud functions deploy eve-contract-notifications-go --region=${_GCP_REGION} --runtime=go120 --source=. --trigger-http --no-allow-unauthenticated --entry-point=Run
 timeout: 1600s
 options:
   logging: CLOUD_LOGGING_ONLY
