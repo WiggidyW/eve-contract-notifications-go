@@ -29,8 +29,10 @@ func init() {
 	functions.HTTP("Run", run)
 }
 
-func run(_ http.ResponseWriter, _ *http.Request) {
+func run(w http.ResponseWriter, _ *http.Request) {
 	main()
+	// Write a simple OK response
+	fmt.Fprint(w, "OK")
 }
 
 func main() {
