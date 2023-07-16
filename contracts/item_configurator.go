@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/WiggidyW/eve-contract-notifications-go/hashcode"
 	pb "github.com/WiggidyW/eve-contract-notifications-go/proto"
@@ -30,7 +30,7 @@ func NewItemConfiguratorClient(
 	conn, err := grpc.DialContext(
 		ctx,
 		ADDRESS,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial server: %v", err)
