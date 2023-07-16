@@ -56,7 +56,7 @@ func (c *ItemConfiguratorClient) Get(ctx context.Context) (*[]Contract, error) {
 		return nil, fmt.Errorf("failed to get contracts: %v", err)
 	}
 
-	contracts := make([]Contract, len(rep.Contracts))
+	contracts := make([]Contract, 0, len(rep.Contracts))
 	for _, c := range rep.Contracts {
 		if c.EsiContract == nil {
 			return nil, fmt.Errorf(
