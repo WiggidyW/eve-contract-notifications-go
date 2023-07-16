@@ -12,6 +12,10 @@ import (
 const (
 	TOKEN      string = "##DISCORD_TOKEN##"
 	CHANNEL_ID string = "##DISCORD_CHANNEL_ID##"
+
+	CHAR_LIMIT  int    = 2000
+	TITLE_EXTRA string = "```\nhash                issued (EVE)      expires (EVE)\n"
+	CLOSER      string = "```"
 )
 
 type NotificationContracts struct {
@@ -20,7 +24,7 @@ type NotificationContracts struct {
 }
 
 func AsEveTime(t time.Time) string {
-	return t.Format("02-01 15:04 UTC")
+	return t.UTC().Format("01/02/06 15:04")
 }
 
 func OpenDiscordSession() (*discordgo.Session, error) {
@@ -47,50 +51,89 @@ func WriteContracts(
 	discord *discordgo.Session,
 	contracts NotificationContracts,
 ) error {
-	message := ""
-	if contracts.New != nil {
-		newContracts := *contracts.New
-		if len(newContracts) > 0 {
-			message += "New Contracts:\n"
-			for _, contract := range *contracts.New {
-				message += fmt.Sprintf(
-					"  hash: %s issued: %s expires: %s\n",
-					contract.HashCode,
-					AsEveTime(contract.Issued),
-					AsEveTime(contract.Expires),
-				)
+	newContractMessages := ContractsToMessages(
+		"***New Contracts***\n",
+		contracts.New,
+	)
+	expiringContractMessages := ContractsToMessages(
+		"***Expiring Contracts***\n",
+		contracts.Expiring,
+	)
+	if newContractMessages != nil {
+		for _, message := range *newContractMessages {
+			err := WriteDiscordMessage(discord, message)
+			if err != nil {
+				return err
 			}
 		}
 	}
-	if contracts.Expiring != nil {
-		expiringContracts := *contracts.Expiring
-		if len(expiringContracts) > 0 {
-			message += "Expiring Contracts:\n"
-			for _, contract := range *contracts.Expiring {
-				message += fmt.Sprintf(
-					"  hash: %s issued: %s expires: %s\n",
-					contract.HashCode,
-					AsEveTime(contract.Issued),
-					AsEveTime(contract.Expires),
-				)
+	if expiringContractMessages != nil {
+		for _, message := range *expiringContractMessages {
+			err := WriteDiscordMessage(discord, message)
+			if err != nil {
+				return err
 			}
 		}
 	}
-	if message != "" {
-		return WriteDiscordMessage(discord, message)
-	} else {
+	return nil
+}
+
+func ContractsToMessages(
+	titleLine string,
+	contracts *[]contracts.Contract,
+) *[]string {
+	// If there are no contracts, return nil
+	if contracts == nil {
 		return nil
 	}
+	c := *contracts
+	if len(c) == 0 {
+		return nil
+	}
+
+	messages := make([]string, 0, 1)
+	message := titleLine + TITLE_EXTRA
+	for _, contract := range c {
+		// This is the line for the contract
+		hashStr := contract.HashCode
+		if len(hashStr) == 15 {
+			hashStr += " "
+		}
+		line := fmt.Sprintf(
+			"%s    %s    %s\n",
+			hashStr,
+			AsEveTime(contract.Issued),
+			AsEveTime(contract.Expires),
+		)
+		// If the line is impossible to fit into a message, skip it.
+		if len(line)+len(titleLine)+len(TITLE_EXTRA)+len(CLOSER) > CHAR_LIMIT {
+			continue
+		}
+		// If the line pushes the message over the limit, start a new message.
+		if len(message)+len(line)+len(TITLE_EXTRA)+len(CLOSER) > CHAR_LIMIT {
+			messages = append(messages, message+CLOSER)
+			message = titleLine + TITLE_EXTRA
+		}
+		// Add the line to the message.
+		message += line
+	}
+	// Add the last message.
+	messages = append(messages, message+"```")
+	return &messages
 }
 
 func WriteDiscordMessage(
 	discord *discordgo.Session,
 	message string,
 ) error {
-	_, err := discord.ChannelMessageSend(CHANNEL_ID, message)
+	_, err := discord.ChannelMessageSend(
+		CHANNEL_ID,
+		message,
+	)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to send discord message: %v",
+			"failed to send discord message, message: '%s', err: '%v'",
+			message,
 			err,
 		)
 	}
