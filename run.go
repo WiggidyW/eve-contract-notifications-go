@@ -122,8 +122,8 @@ func runInner() error {
 	var hashCodes []hashcode.HashCode
 	// Find and store contracts that weren't in the previous run.
 	newContracts := make([]contracts.Contract, 0)
-	// Find and store contracts that are expiring soon.
-	expContracts := make([]contracts.Contract, 0)
+	// // Find and store contracts that are expiring soon.
+	// expContracts := make([]contracts.Contract, 0)
 
 	// Get the contracts from the channel.
 	select {
@@ -139,16 +139,17 @@ func runInner() error {
 			if !prevRun.Contains(hashCode) {
 				newContracts = append(newContracts, contract)
 			}
-			if contract.Expires.Before(time.Now().Add(EXPIRING_SOON)) {
-				expContracts = append(expContracts, contract)
-			}
+			// if contract.Expires.Before(time.Now().Add(EXPIRING_SOON)) {
+			// 	expContracts = append(expContracts, contract)
+			// }
 		}
 	}
 
 	// Write the contracts to discord.
 	discordChan <- discord.NotificationContracts{
-		New:      &newContracts,
-		Expiring: &expContracts,
+		New: &newContracts,
+		// Expiring: &expContracts,
+		Expiring: nil,
 	}
 
 	// Store the hash codes from this run. Don't panic yet if this fails.
