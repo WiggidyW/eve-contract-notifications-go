@@ -81,13 +81,14 @@ func (f *FirestoreStorage) Get(
 	hashCodes := hashcode.HashCodeSetWithCapacity(len(hashCodesArr))
 	for _, hashCodeRaw := range hashCodesArr {
 		// Convert the hash code to a string.
-		hashCode, ok := hashCodeRaw.(hashcode.HashCode)
+		hashCodeStr, ok := hashCodeRaw.(string)
 		if !ok {
 			return nil, fmt.Errorf(
 				"failed to convert hash code to string: %v",
-				err,
+				hashCodeRaw,
 			)
 		}
+		hashCode := hashcode.HashCode(hashCodeStr)
 		// Add the hash code to the set.
 		hashCodes.Add(hashCode)
 	}
@@ -107,10 +108,28 @@ func (f *FirestoreStorage) Set(
 		}},
 	)
 	if err != nil {
-		return fmt.Errorf(
-			"failed to update document: %v",
-			err,
-		)
+		status, ok := status.FromError(err)
+		// If the collection doesn't exist, create it.
+		if ok && status.Code() == codes.NotFound {
+			_, err = f.client.Collection(COLLECTION).Doc(DOCUMENT).Set(
+				ctx,
+				map[string]interface{}{
+					FIELD: *hashCodes,
+				},
+			)
+			if err != nil {
+				return fmt.Errorf(
+					"failed to create document: %v",
+					err,
+				)
+			}
+			// Otherwise, return the error.
+		} else {
+			return fmt.Errorf(
+				"failed to update document: %v",
+				err,
+			)
+		}
 	}
 	return nil
 }
